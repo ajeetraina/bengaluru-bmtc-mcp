@@ -7,7 +7,7 @@ An implementation of a Model Context Protocol (MCP) server for Bangalore Metropo
 
 ## Overview
 
-This repository provides an implementation of a Mall Connector Program (MCP) server for the Bangalore Metropolitan Transport Corporation (BMTC). The server interfaces with BMTC data to provide real-time information about bus schedules, routes, stops, and availability.
+This repository provides an implementation of a Model Context Protocol (MCP) server for the Bangalore Metropolitan Transport Corporation (BMTC). The server interfaces with BMTC data to provide real-time information about bus schedules, routes, stops, and availability.
 
 ## Features
 
