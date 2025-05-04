@@ -1,0 +1,173 @@
+version: '3.8'
+
+services:
+  # MCP API Server
+  bmtc-mcp-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    image: bmtc-mcp-api:latest
+    container_name: bmtc-mcp-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/bmtc-mcp
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - BMTC_API_BASE_URL=${BMTC_API_BASE_URL}
+      - BMTC_API_KEY=${BMTC_API_KEY}
+      - LOG_LEVEL=info
+    volumes:
+      - api_data:/app/data
+      - api_logs:/app/logs
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - bmtc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Data Integration Service
+  bmtc-data-integration:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.data-integration
+    image: bmtc-data-integration:latest
+    container_name: bmtc-data-integration
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/bmtc-mcp
+      - BMTC_API_BASE_URL=${BMTC_API_BASE_URL}
+      - BMTC_API_KEY=${BMTC_API_KEY}
+      - BMTC_SCHEDULE_DB_URI=mongodb://mongodb:27017/bmtc-schedule
+      - LOG_LEVEL=info
+    volumes:
+      - integration_data:/app/data
+      - integration_logs:/app/logs
+    depends_on:
+      - mongodb
+    networks:
+      - bmtc-network
+    healthcheck:
+      test: ["CMD", "node", "/app/src/data-integration-cli.js", "status"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # MongoDB with replica set for production
+  mongodb:
+    image: mongo:4.4
+    container_name: bmtc-mongodb
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongodb-init.js:/docker-entrypoint-initdb.d/mongodb-init.js:ro
+    networks:
+      - bmtc-network
+    healthcheck:
+      test: test $$(mongosh --quiet --eval "try { rs.status().ok } catch(_) { rs.initiate().ok }" --quiet) -eq 1
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis with persistence for production
+  redis:
+    image: redis:6-alpine
+    container_name: bmtc-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - bmtc-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # NGINX for reverse proxy and SSL termination
+  nginx:
+    image: nginx:alpine
+    container_name: bmtc-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - bmtc-mcp-api
+    networks:
+      - bmtc-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus for monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: bmtc-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    networks:
+      - bmtc-network
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: bmtc-grafana
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - bmtc-network
+
+volumes:
+  api_data:
+  api_logs:
+  integration_data:
+  integration_logs:
+  mongodb_data:
+  redis_data:
+  nginx_logs:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  bmtc-network:
+    driver: bridge

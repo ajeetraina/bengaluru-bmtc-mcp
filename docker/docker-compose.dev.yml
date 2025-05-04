@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # MCP API Server - Development mode with hot reloading
+  bmtc-mcp-api-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    container_name: bmtc-mcp-api-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # For Node.js debugging
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/bmtc-mcp
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - BMTC_API_BASE_URL=${BMTC_API_BASE_URL}
+      - BMTC_API_KEY=${BMTC_API_KEY}
+      - LOG_LEVEL=debug
+    volumes:
+      - ../:/app  # Mount the entire project for hot reloading
+      - /app/node_modules  # Prevent overwriting node_modules
+    command: npm run dev
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - bmtc-network-dev
+
+  # MongoDB for development
+  mongodb:
+    image: mongo:4.4
+    container_name: bmtc-mongodb-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"  # Expose port for local development
+    volumes:
+      - mongodb_data_dev:/data/db
+    networks:
+      - bmtc-network-dev
+
+  # Redis for development
+  redis:
+    image: redis:6-alpine
+    container_name: bmtc-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"  # Expose port for local development
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - bmtc-network-dev
+
+  # MongoDB Express for database management
+  mongo-express:
+    image: mongo-express:latest
+    container_name: bmtc-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER:-admin}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD:-pass}
+    depends_on:
+      - mongodb
+    networks:
+      - bmtc-network-dev
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: bmtc-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - bmtc-network-dev
+
+volumes:
+  mongodb_data_dev:
+  redis_data_dev:
+
+networks:
+  bmtc-network-dev:
+    driver: bridge
