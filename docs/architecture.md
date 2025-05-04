@@ -1,137 +1,128 @@
-# BMTC MCP Architecture
+# BMTC MCP Server Architecture
 
-This document provides an overview of the architecture of the Bangalore Metropolitan Transport Corporation (BMTC) Mobility Connectivity Platform (MCP) server.
+This document describes the architecture of the Bengaluru BMTC Mall Connector Program (MCP) server.
 
-## Overall Architecture
+## System Architecture Overview
 
-The BMTC MCP follows a microservices architecture with the following main components:
+The BMTC MCP server follows a modular, layered architecture that separates concerns and promotes maintainability. The system architecture is designed to handle real-time transit data from Bangalore Metropolitan Transport Corporation (BMTC) buses and provide it to client applications through a standardized API.
 
-```
-┌─────────────────────┐        ┌───────────────────────┐
-│    BMTC GPS/ATD     │        │  Third-Party Apps &   │
-│ Tracking Systems    │        │      Services         │
-└─────────┬───────────┘        └──────────┬────────────┘
-          │                               │
-          ▼                               ▼
-┌─────────────────────────────────────────────────────┐
-│                                                     │
-│             BMTC MCP Data Integration Layer         │
-│                                                     │
-└─────────────────────────┬───────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────┐
-│                                                     │
-│              BMTC MCP Core Services                 │
-│                                                     │
-├─────────────┬──────────────────────┬───────────────┤
-│  Real-time  │   Static Data        │  Authentication│
-│  Tracking   │   Management         │  & Security    │
-└─────────────┴──────────────────────┴───────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────┐
-│                                                     │
-│           BMTC MCP API Gateway & Management         │
-│                                                     │
-└─────────────────────────┬───────────────────────────┘
-                          │
-                          ▼
-┌──────────┬─────────────┬────────────┬──────────────┐
-│          │             │            │              │
-│ Mobile   │ Web Portal  │ Developer  │  Analytics   │
-│ Apps     │             │ Portal     │  Dashboard   │
-│          │             │            │              │
-└──────────┴─────────────┴────────────┴──────────────┘
-```
+![BMTC MCP Architecture](../docs/images/architecture-diagram.png)
 
-## Component Details
+## Core Components
 
-### 1. Data Integration Layer
+### 1. API Layer
 
-The Data Integration Layer connects to various BMTC data sources and transforms them into standardized formats for use in the MCP platform. Key components include:
+The API layer provides RESTful endpoints for clients to access transit data. It handles:
 
-- **GPS/ATD Data Collectors**: Interface with existing bus tracking devices to collect real-time location data
-- **Schedule Data Import**: Import and process bus schedule information
-- **Data Transformation**: Convert proprietary formats to standardized API formats
-- **GTFS Integration**: Generate and maintain GTFS and GTFS-RT feeds for interoperability
+- Authentication and authorization
+- Request validation
+- Response formatting
+- Rate limiting and API security
 
-### 2. Core Services
+Technologies: Express.js, JWT for authentication, Express middleware for request handling
 
-Core Services provide the main business logic of the MCP platform:
+### 2. Service Layer
 
-- **Real-time Tracking Service**:
-  - Bus location tracking
-  - ETA calculation engine
-  - Traffic integration
+The service layer contains the business logic of the application, including:
 
-- **Static Data Management**:
-  - Route database
-  - Schedule database
-  - Bus stop database
-  - Fare calculation service
+- Data transformation and normalization
+- Integration with external APIs (BMTC API)
+- Complex calculations (e.g., ETA calculation)
+- Business rules implementation
 
-- **Authentication & Security**:
-  - API key management
-  - Rate limiting
-  - Access control
-  - Security monitoring
+### 3. Data Access Layer
 
-### 3. API Gateway & Management
+The data access layer manages interactions with the database:
 
-The API Gateway provides a unified interface for all MCP services:
+- CRUD operations
+- Data validation
+- Schema management
+- Query optimizations
 
-- API versioning
-- Documentation portal
-- Developer sandbox environment
-- Usage analytics
-- Rate limiting and throttling
+Technologies: Mongoose ODM, MongoDB
 
-### 4. Front-end Applications
+### 4. Caching Layer
 
-Various front-end applications that use the MCP API:
+The caching layer improves performance by storing frequently accessed data:
 
-- Mobile app (Namma BMTC)
-- Web portal for route planning
-- Developer portal for API access
-- Internal analytics dashboard
+- Route information caching
+- Stop information caching
+- Short-term ETA caching
+- Request-level caching
 
-## Technology Stack
+Technologies: Redis
 
-- **Backend**: Node.js with Express
-- **Database**: MongoDB for data storage
-- **Caching**: Redis for high-performance data caching
-- **API Documentation**: Swagger/OpenAPI
-- **Container Orchestration**: Docker and Docker Compose
-- **Real-time Feeds**: GTFS and GTFS-RT for interoperability
+### 5. External Integration Layer
+
+This layer manages interactions with external systems:
+
+- BMTC API client
+- Other third-party API integrations
+- Data synchronization mechanisms
 
 ## Data Flow
 
-1. The Data Integration Service collects data from various sources (GPS, schedules, etc.) and stores it in MongoDB.
-2. The Core Services process this data and expose it through RESTful APIs.
-3. The API Gateway manages access control, rate limiting, and documentation.
-4. Front-end applications consume these APIs to provide user-facing services.
+1. **Client Request**: Mobile apps or client systems request information through the API.
+2. **Authentication**: The API layer validates API keys or JWT tokens.
+3. **Caching Check**: The system checks if the requested data exists in cache.
+4. **Data Processing**: If not in cache, the service layer processes the request, retrieving data from the database or external APIs.
+5. **Response**: Processed data is returned to the client.
 
-## Security Considerations
+## Real-time Data Processing
 
-- All API endpoints (except health check) require authentication via API keys
-- HTTPS is enforced for all API requests in production
-- Rate limiting prevents abuse
-- Input validation prevents injection attacks
-- Regular security audits are conducted
+For real-time bus tracking:
 
-## Scalability
+1. The system periodically polls the BMTC API for bus location updates.
+2. New location data is stored in the database and used to update the cache.
+3. The ETA calculation service uses this data to estimate arrival times.
 
-The system is designed to be horizontally scalable:
+## Database Design
 
-- Stateless services can be scaled out using container orchestration
-- MongoDB and Redis can be scaled using replication and sharding
-- API Gateway can be scaled using load balancing
+### Collections
 
-## Future Enhancements
+1. **Routes**: Contains bus route information including route ID, name, stops sequence.
+2. **Stops**: Contains bus stop information including location coordinates, name, address.
+3. **BusLocations**: Contains real-time bus location data including GPS coordinates, speed, timestamp.
+4. **Users**: Contains user authentication information.
 
-- Integration with payment systems for ticketing
-- Machine learning for improved ETA predictions
-- Crowd-sourced real-time updates from commuters
-- Integration with other transit systems (metro, etc.)
-- Mobile app enhancements for route planning and push notifications
+## Security Architecture
+
+The security architecture focuses on:
+
+1. **Authentication**: JWT-based authentication for API access.
+2. **Authorization**: Role-based access control for administrative actions.
+3. **Data Protection**: Encrypted storage of sensitive information.
+4. **API Security**: Rate limiting, input validation, and parameterized queries.
+
+## Scalability Considerations
+
+The architecture supports horizontal scaling through:
+
+1. **Stateless Design**: API servers are stateless and can be scaled horizontally.
+2. **Caching**: Redis caching reduces database load.
+3. **Database Indexing**: Geospatial and standard indexes optimize queries.
+4. **Microservices Potential**: The modular design allows future decomposition into microservices.
+
+## Deployment Architecture
+
+The deployment architecture utilizes containerization for consistency across environments:
+
+1. **Docker Containers**: Application components are containerized.
+2. **Docker Compose**: For development and simple deployments.
+3. **Container Orchestration**: Potential for Kubernetes in production for scaling and management.
+
+## Monitoring and Logging
+
+The architecture includes:
+
+1. **Centralized Logging**: Using Winston for structured logging.
+2. **Performance Monitoring**: Server and application metrics collection.
+3. **Error Tracking**: Capturing and reporting application errors.
+
+## Future Extensibility
+
+The architecture is designed to accommodate future enhancements:
+
+1. **WebSocket Support**: For real-time updates to clients.
+2. **Analytics Engine**: For traffic pattern analysis and service optimization.
+3. **Machine Learning Integration**: For more accurate ETA predictions.
