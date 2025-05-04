@@ -3,7 +3,7 @@
 ![image](https://github.com/user-attachments/assets/56baccff-ae44-4c8e-a397-9b5fe9d83c0a)
 
 
-An implementation of a Mall Connector Program (MCP) server for Bangalore Metropolitan Transport Corporation (BMTC) bus services.
+An implementation of a Model Context Protocol (MCP) server for Bangalore Metropolitan Transport Corporation (BMTC) bus services.
 
 ## Overview
 
