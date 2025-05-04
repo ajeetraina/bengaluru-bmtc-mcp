@@ -1,0 +1,410 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "BMTC Mobility Connectivity Platform API",
+    "description": "API documentation for the Bangalore Metropolitan Transport Corporation (BMTC) Mobility Connectivity Platform which provides real-time access to BMTC bus information.",
+    "version": "1.0.0",
+    "contact": {
+      "email": "developer@mybmtc.karnataka.gov.in"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.mybmtc.karnataka.gov.in/v1",
+      "description": "Production server"
+    },
+    {
+      "url": "https://api-dev.mybmtc.karnataka.gov.in/v1",
+      "description": "Development server"
+    },
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "health",
+      "description": "Health check endpoint"
+    },
+    {
+      "name": "routes",
+      "description": "Bus routes operations"
+    },
+    {
+      "name": "stops",
+      "description": "Bus stops operations"
+    },
+    {
+      "name": "arrivals",
+      "description": "Bus arrivals operations"
+    },
+    {
+      "name": "locations",
+      "description": "Bus location operations"
+    },
+    {
+      "name": "alerts",
+      "description": "Service alerts operations"
+    },
+    {
+      "name": "fare",
+      "description": "Fare calculation operations"
+    },
+    {
+      "name": "gtfs",
+      "description": "GTFS feed operations"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Server health check",
+        "description": "Returns the current status of the API server",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "OK"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-05-04T12:34:56.789Z"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bus-routes": {
+      "get": {
+        "tags": [
+          "routes"
+        ],
+        "summary": "Get all bus routes",
+        "description": "Returns a list of all BMTC bus routes",
+        "operationId": "getBusRoutes",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of bus routes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RouteBasic"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/bus-routes/{routeId}": {
+      "get": {
+        "tags": [
+          "routes"
+        ],
+        "summary": "Get route details",
+        "description": "Returns detailed information about a specific bus route, including all stops",
+        "operationId": "getRouteDetails",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routeId",
+            "in": "path",
+            "description": "ID of the route to return",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "500K"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed route information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteDetailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {
+      "RouteBasic": {
+        "type": "object",
+        "properties": {
+          "routeId": {
+            "type": "string",
+            "example": "500K"
+          },
+          "routeName": {
+            "type": "string",
+            "example": "Kempegowda Bus Station to Kadugodi"
+          },
+          "origin": {
+            "type": "string",
+            "example": "Kempegowda Bus Station"
+          },
+          "destination": {
+            "type": "string",
+            "example": "Kadugodi"
+          },
+          "distance": {
+            "type": "number",
+            "format": "float",
+            "example": 23.5
+          },
+          "frequency": {
+            "type": "integer",
+            "example": 15
+          }
+        }
+      },
+      "RouteDetailed": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RouteBasic"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "stops": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "stopId": {
+                      "type": "string",
+                      "example": "KBS-01"
+                    },
+                    "stopName": {
+                      "type": "string",
+                      "example": "Kempegowda Bus Station Platform 1"
+                    },
+                    "sequenceNumber": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "distanceFromOrigin": {
+                      "type": "number",
+                      "format": "float",
+                      "example": 0
+                    },
+                    "expectedTravelTime": {
+                      "type": "integer",
+                      "example": 0
+                    }
+                  }
+                }
+              },
+              "schedule": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "dayType": {
+                      "type": "string",
+                      "enum": ["WEEKDAY", "SATURDAY", "SUNDAY", "HOLIDAY"],
+                      "example": "WEEKDAY"
+                    },
+                    "trips": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "departureTime": {
+                            "type": "string",
+                            "example": "06:00:00"
+                          },
+                          "arrivalTime": {
+                            "type": "string",
+                            "example": "07:30:00"
+                          },
+                          "busType": {
+                            "type": "string",
+                            "enum": ["REGULAR", "AC", "ELECTRIC", "METRO_FEEDER"],
+                            "example": "REGULAR"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Stop": {
+        "type": "object",
+        "properties": {
+          "stopId": {
+            "type": "string",
+            "example": "KBS-01"
+          },
+          "stopName": {
+            "type": "string",
+            "example": "Kempegowda Bus Station Platform 1"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "Point"
+              },
+              "coordinates": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "example": [77.5719, 12.9783]
+              }
+            }
+          },
+          "address": {
+            "type": "string",
+            "example": "Kempegowda Bus Station, Majestic, Bangalore"
+          },
+          "amenities": {
+            "type": "object",
+            "properties": {
+              "hasShelter": {
+                "type": "boolean",
+                "example": true
+              },
+              "hasSeating": {
+                "type": "boolean",
+                "example": true
+              },
+              "hasDisplayBoard": {
+                "type": "boolean",
+                "example": true
+              },
+              "isAccessible": {
+                "type": "boolean",
+                "example": true
+              }
+            }
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["500K", "501A", "502C"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "API key is missing or invalid",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "API key is required"
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The specified resource was not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Route not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "An error occurred on the server",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
