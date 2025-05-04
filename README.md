@@ -1,13 +1,22 @@
 # Bengaluru BMTC MCP Server
 
-![image](https://github.com/user-attachments/assets/56baccff-ae44-4c8e-a397-9b5fe9d83c0a)
+An implementation of a Mall Connector Program (MCP) server for Bangalore Metropolitan Transport Corporation (BMTC) bus services.
 
+## Architecture
 
-An implementation of a Model Context Protocol (MCP) server for Bangalore Metropolitan Transport Corporation (BMTC) bus services.
+![BMTC MCP Architecture](docs/images/architecture-diagram.png)
 
-## Overview
+The BMTC MCP server follows a modular, layered architecture that separates concerns and promotes maintainability. The system is designed to handle real-time transit data from Bangalore Metropolitan Transport Corporation buses and provide it through a standardized API.
 
-This repository provides an implementation of a Model Context Protocol (MCP) server for the Bangalore Metropolitan Transport Corporation (BMTC). The server interfaces with BMTC data to provide real-time information about bus schedules, routes, stops, and availability.
+### Core Components
+
+1. **API Layer**: RESTful endpoints for authentication, routes, stops, bus locations, and ETA information
+2. **Service Layer**: Business logic, data transformation, and ETA calculations
+3. **Data Access Layer**: MongoDB integration via Mongoose ODM
+4. **Caching Layer**: Redis-based caching for improved performance
+5. **External Integration Layer**: BMTC API integration
+
+[Read the full architecture documentation](docs/architecture.md)
 
 ## Features
 
@@ -18,7 +27,6 @@ This repository provides an implementation of a Model Context Protocol (MCP) ser
 - Authentication and authorization
 - Data caching and optimization
 - GeoSpatial queries for nearby stops and buses
-- Mock data generation for development and testing
 
 ## Prerequisites
 
@@ -179,6 +187,33 @@ GET /api/v1/eta/:stopId
 GET /api/v1/eta/:stopId/:routeId
 ```
 
+## API Keys
+
+### JWT Secret
+
+The JWT secret is used for signing authentication tokens. Generate a secure random string:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Add this to your `.env` file:
+
+```
+JWT_SECRET=your_generated_secret_here
+```
+
+### BMTC API Key
+
+For development, you can use mock data without an actual BMTC API key:
+
+```
+BMTC_API_ENDPOINT=https://bmtc-api-endpoint.example
+BMTC_API_KEY=your_bmtc_api_key_here
+```
+
+For production, you would need to contact BMTC directly to request official API access.
+
 ## Development
 
 ### Testing
@@ -241,74 +276,6 @@ bengaluru-bmtc-mcp/
     ├── tests/              # Test files
     └── utils/              # Utility functions
 ```
-
-## Docker Compose Reference
-
-The `docker-compose.yml` file includes:
-
-```yaml
-version: '3.8'
-
-services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: bmtc-mcp-api
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
-    depends_on:
-      - mongo
-      - redis
-    environment:
-      - NODE_ENV=development
-      - PORT=3000
-      - MONGO_URI=mongodb://mongo:27017/bmtc-mcp
-      - REDIS_URI=redis://redis:6379
-      - API_KEY=your_api_key_here
-      - JWT_SECRET=your_jwt_secret_here
-      - JWT_EXPIRES_IN=86400
-      - BMTC_API_ENDPOINT=https://bmtc-api-endpoint.example
-      - BMTC_API_KEY=your_bmtc_api_key_here
-      - CACHE_DURATION=300
-      - LOG_LEVEL=info
-
-  mongo:
-    image: mongo:6
-    container_name: bmtc-mcp-mongo
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
-  redis:
-    image: redis:7-alpine
-    container_name: bmtc-mcp-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-
-volumes:
-  mongo-data:
-  redis-data:
-```
-
-## Production Deployment
-
-For production deployment, consider:
-
-1. Setting `NODE_ENV=production` in your environment
-2. Using a process manager like PM2: `npm install -g pm2 && pm2 start src/index.js`
-3. Setting up a reverse proxy like Nginx for SSL termination
-4. Using Docker Swarm or Kubernetes for container orchestration
-5. Setting up monitoring and logging
 
 ## Contributing
 
