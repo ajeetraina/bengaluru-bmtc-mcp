@@ -1,0 +1,15 @@
+{
+  "bmtc_mcp": {
+    "baseUrl": "http://localhost:3000/api/v1",
+    "apiKey": "test-api-key-12345",
+    "endpoints": {
+      "health": "/health",
+      "busRoutes": "/bus-routes",
+      "busStops": "/bus-stops",
+      "busArrivals": "/bus-arrivals/{stopId}",
+      "busLocations": "/bus-locations/{routeId}",
+      "fareCalculator": "/fare-calculator?fromStopId={fromStopId}&toStopId={toStopId}&busType={busType}",
+      "serviceAlerts": "/service-alerts"
+    }
+  }
+}

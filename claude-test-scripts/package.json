@@ -1,0 +1,14 @@
+{
+  "name": "bmtc-mcp-test-scripts",
+  "version": "1.0.0",
+  "description": "Test scripts for BMTC MCP API",
+  "main": "test-api.js",
+  "scripts": {
+    "test": "node test-api.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.2"
+  }
+}
