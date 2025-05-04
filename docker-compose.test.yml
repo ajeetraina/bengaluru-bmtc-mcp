@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # MCP API Server
+  bmtc-mcp-api:
+    build: .
+    container_name: bmtc-mcp-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/bmtc-mcp
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - bmtc-network
+
+  # MongoDB
+  mongodb:
+    image: mongo:4.4
+    container_name: bmtc-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - bmtc-network
+
+  # Redis
+  redis:
+    image: redis:6-alpine
+    container_name: bmtc-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - bmtc-network
+
+  # MongoDB Express for database management
+  mongo-express:
+    image: mongo-express:latest
+    container_name: bmtc-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=password
+    depends_on:
+      - mongodb
+    networks:
+      - bmtc-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  bmtc-network:
+    driver: bridge
