@@ -1,6 +1,6 @@
 # Bangalore BMTC Mobility Connectivity Platform (MCP)
 
-This repository contains the implementation of a Mobility Connectivity Platform (MCP) server for the Bangalore Metropolitan Transport Corporation (BMTC), inspired by Singapore's Land Transport Authority (LTA) DataMall API system.
+This repository contains the implementation of a Mobility Connectivity Platform (MCP) server for the Bangalore Metropolitan Transport Corporation (BMTC).
 
 ## Overview
 
