@@ -19,9 +19,11 @@ The BMTC MCP server follows a modular, layered architecture. The system is desig
 
 ## Features
 
-- Real-time bus location tracking
-- Route information and scheduling
-- Stop details and ETA (Estimated Time of Arrival)
+Here're the list of things that you can find using MCP Client or chat window:
+
+- Real-time bus location tracking 
+- Route information and scheduling 
+- Stop details and ETA (Estimated Time of Arrival) 
 - Support for over 2,200 bus routes and 8,400+ bus stops in Bengaluru
 - Authentication and authorization
 - Data caching and optimization
