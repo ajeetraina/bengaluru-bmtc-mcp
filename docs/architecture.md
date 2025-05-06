@@ -1,6 +1,6 @@
 # BMTC MCP Server Architecture
 
-This document describes the architecture of the Bengaluru BMTC Mall Connector Program (MCP) server.
+This document describes the architecture of the Bengaluru BMTC Model Context Protocol (MCP) server.
 
 ## System Architecture Overview
 
