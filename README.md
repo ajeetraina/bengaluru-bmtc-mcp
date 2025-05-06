@@ -4,7 +4,6 @@ An implementation of a Mall Connector Program (MCP) server for Bangalore Metropo
 
 ## Architecture
 
-![BMTC MCP Architecture](docs/images/architecture-diagram.png)
 
 The BMTC MCP server follows a modular, layered architecture that separates concerns and promotes maintainability. The system is designed to handle real-time transit data from Bangalore Metropolitan Transport Corporation buses and provide it through a standardized API.
 
