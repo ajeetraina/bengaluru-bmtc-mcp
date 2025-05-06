@@ -5,7 +5,7 @@ An implementation of a Model Context Protocol (MCP) server for Bangalore Metropo
 ## Architecture
 
 
-The BMTC MCP server follows a modular, layered architecture that separates concerns and promotes maintainability. The system is designed to handle real-time transit data from Bangalore Metropolitan Transport Corporation buses and provide it through a standardized API.
+The BMTC MCP server follows a modular, layered architecture. The system is designed to handle real-time transit data from Bangalore Metropolitan Transport Corporation buses and provide it through a standardized API.
 
 ### Core Components
 
